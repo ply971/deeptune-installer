@@ -241,28 +241,3 @@ app with every dependency bundled in.
 </table>
 
 </details>
-
-## Documentation
-
-DeepTune is being under active development and mainteneance with a user-friendly comprehensive documentation for easier usage. The documentation can be accessed [here](https://deeptune.readthedocs.io/en/latest/).
-
-## Acknowledgments
-This software package was developed as part of work done at Medical Imaging Bioinformatics lab under the supervision of Jacob Levman at St. Francis Xavier Univeristy (StFX), Nova Scotia, Canada.
-
-Thanks to Xuchen for providing their parameter-efficient fine-tuned Swin implementation [SwinTransformerWithPEFT](https://github.com/XuchenGuo/SwinTransformerWithPEFT)
-
-## Citation
-
-If you find *DeepTune* useful, please give us a star ⭐ on GitHub for support.
-
-Also if you find this repository helpful, please cite it as follows:
-
-```bibtex
-@software{DeepTune,
-author  = {Moayadeldin Hussain, John Kendall and Jacob Levman},
-title   = {DeepTune: Cutting-edge Tool automating state-of-the-art deep learning models for cross-modal applications},
-year = {2025},
-url = {https://github.com/moayadeldin/deeptune},
-version = {1.1.0}
-}
-```
