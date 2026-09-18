@@ -1,0 +1,25 @@
+# Direct runtime dependencies from the verified Python 3.12 environment.
+# Install: python -m pip install -r requirements.txt
+torch==2.14.0
+torchvision==0.29.0
+numpy==2.5.2
+pandas==2.3.3
+pyarrow==25.0.1
+scikit-learn==1.9.0
+scipy==1.18.1
+transformers==5.16.1
+peft==0.20.0
+dearpygui==2.3.1
+pytorch-tabular==1.2.0
+pytorch-forecasting==1.8.0
+tabpfn==8.5.0
+tabpfn-extensions==0.6.2
+lightning==2.6.5
+pytorch-lightning==2.6.5
+openpyxl==3.1.5
+opencv-python==5.0.0.93
+pillow==12.3.0
+tqdm==4.70.0
+tabulate==0.10.0
+tensorboard==2.21.0
+joblib==1.6.0
