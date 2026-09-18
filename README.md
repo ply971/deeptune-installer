@@ -52,13 +52,15 @@ Video workflows support parameter-efficient fine-tuning (PEFT) and embedding ext
 
 ***DeepTune*** is primarily presented for undergraduate and graduate computer science students community at St. Francis Xavier University (StFX) in Nova Scotia, Canada. We aspire to seeing this software adopted broadly across the computer science research community all over the world.
 
-## DeepTune Demo
+## DeepTune GUI Demo
 
-**Images Demo:** The data sample used in this demo is a subset of the Chest X-Ray Images (Pneumonia) dataset available at: [Chest X-ray Dataset](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia).
+Explore the desktop app: **Overview → Video dataset → Clip preview → Model & Training → Test**.
 
-https://github.com/user-attachments/assets/3a2e62a2-4715-4cab-b5ff-b23f4684f212
+[![Animated walkthrough of the DeepTune desktop GUI](docs/assets/deeptune-gui-demo.gif)](https://github.com/ply971/deeptune-installer/blob/main/docs/assets/deeptune-gui-demo.mp4)
 
-More cross-modal video demos can be found in the documentation's [demo page](https://deeptune.readthedocs.io/en/latest/guides/demos.html).
+**[Watch the GUI demo video (MP4)](https://github.com/ply971/deeptune-installer/blob/main/docs/assets/deeptune-gui-demo.mp4)** · [Desktop guide](desktop/README.md) · [Download the Windows installer](https://github.com/ply971/deeptune-installer/releases/latest)
+
+Captured from the actual desktop app. The preview uses a synthetic motion clip; this interface tour shows the available controls, not a completed training or inference run.
 
 ## Desktop GUI
 
