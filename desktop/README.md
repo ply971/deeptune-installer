@@ -1,147 +1,156 @@
-# DeepTune desktop
+# DeepTune desktop user guide
 
-Run from the repository root with the project environment:
+[Download the app](https://github.com/ply971/deeptune-installer/releases/latest) · [GUI demo](../README.md#deeptune-gui-demo) · [Troubleshooting](../docs/TROUBLESHOOTING.md)
 
-```powershell
-.venv\Scripts\python.exe desktop\app.py
+Use DeepTune to prepare a dataset, configure a model, run training, inspect the results, and predict on new data from a desktop interface.
+
+## Find your way around
+
+| Page | Use it for |
+| --- | --- |
+| **Overview** | See the workflow and jump to a dataset or results. |
+| **Dataset** | Choose your data type and source, preview data, set the target column, and build video clip lists. |
+| **Model & Training** | Choose a model, training preset, and settings. |
+| **Run** | Choose an output folder, save or load settings, start or stop training, and follow logs. |
+| **Results** | Browse experiments, inspect metrics and curves, and export metrics. |
+| **Test** | Use a trained model on new data and inspect predictions. |
+
+## Your first training run
+
+### 1. Choose and preview your data
+
+On **Dataset**, select `images`, `text`, `tabular`, `timeseries`, or `video`.
+
+Leave **This is raw data (needs conversion to parquet)** enabled for ordinary folders, CSV/XLSX files, or a video clip list. Disable it when supplying an existing DeepTune-compatible parquet dataset.
+
+Use **Browse folder** or **Browse file**, then **Load / preview**. A table preview shows up to 50 rows. Image and video class folders show class counts; individual video clips can be played in the preview.
+
+| Data type | Training input |
+| --- | --- |
+| Images | A folder containing one subfolder per class, or a prepared parquet dataset. |
+| Video | Class folders, a labeled clip list created in the app, a CSV/XLSX video manifest, or a prepared parquet dataset. |
+| Text | A CSV/XLSX file containing text records and their target labels, or prepared parquet. |
+| Tabular | A CSV/XLSX file with feature columns and a target column, or prepared parquet. |
+| Time series | A CSV/XLSX file with the required time index, target, and model input columns, or prepared parquet. |
+
+Set **Target column** to the value the model should learn to predict. The default is `labels`. For supported grouped datasets, **Grouper column** can identify related records, such as records from the same subject, so those groups stay together during splitting.
+
+For image/video classification folders, organize your data like this:
+
+```text
+my-dataset/
+  class-a/
+    sample-01
+    sample-02
+  class-b/
+    sample-03
+    sample-04
 ```
 
-The interface uses Dear PyGui; the run itself still goes through deeptune.py's
-own one-call CLI, launched as a subprocess (see `desktop/runner.py`) - the GUI
-process only imports pandas and dearpygui, never torch/transformers, so it
-opens quickly and never blocks on the ML stack just to show you a form.
+Use real image or video filenames and enough examples in each class for training, validation, and evaluation. Folder-based inputs are for classification. Numeric-target regression needs prepared parquet, or a video manifest with numeric labels.
 
-## Pages
+### 2. Choose a model and settings
 
-- **Overview** - what the app does and where to start.
-- **Dataset** - pick a modality (images / text / tabular / timeseries /
-  video), point at a raw data folder or an existing parquet file, and preview
-  it. Raw images/video folders are previewed with a per-class file count using
-  the exact same directory convention `handlers/raw_to_parquet_dataset.py`
-  expects (one subdirectory per class, optionally grouped under split
-  subdirectories). Video also supports selecting individual MP4 files and
-  building a labeled clip list directly in the app. Other modalities expect
-  a single CSV/XLSX file, or an existing parquet.
-- **Model & Training** - model version (the list updates for the chosen
-  modality), transfer-learning options (added layers, embedding size, freeze
-  backbone, PEFT/LoRA), training hyperparameters (batch size, epochs,
-  learning rate), and whatever else that modality/model needs: frame count
-  and pooling for video, continuous/categorical columns for GANDALF,
-  fine-tuning mode for TabPFN, the time index column for DeepAR.
-- **Run** - choose an output directory, review the equivalent CLI command,
-  launch it, and follow the live (tqdm-aware) log. Stop cancels the run and
-  its worker processes. Save or load reusable JSON settings; the last session
-  is restored when you reopen the app. Full logs and the configuration for
-  each launch are saved automatically under `desktop-sessions/` in the output folder.
-- **Results** - completed and partial runs under the chosen output directory, with
-  its holdout metrics table, training/validation loss curve, checkpoint path,
-  and embeddings file. Export all available metrics to CSV and open the selected
-  experiment folder. Incomplete files are reported without breaking the page.
-- **Test** - load a completed run's checkpoint and run it on new data instead of
-  the holdout split it was trained against: point at a single new image or video
-  file, a folder of them (one subfolder per class to compare against known
-  labels, or a flat folder to just predict), or a new CSV/XLSX/parquet file for
-  text/tabular/timeseries. Get each sample's predicted class or value,
-  confidence, and - when the new data has its own labels - whether the
-  prediction was correct and an overall
-  accuracy (or MAE/RMSE for regression). Model version, class count, and every
-  other model-build setting come from the picked run's own recorded settings,
-  not re-entered by hand. Runs through `infer.py` the same way the Run page
-  launches `deeptune.py`: a subprocess with a live log, cancellable, writing
-  `predictions.csv` (and `inference_metrics.json`, when there was ground truth
-  to compare against) under that run's own folder rather than the training
-  output layout. SigLIP images and DeepAR timeseries have narrower support
-  today - see `inference/README.md` for exactly what's covered per modality
-  and why.
+Open **Model & Training**. **Model version** lists options for the selected data type.
 
-Previews load on a worker thread and read at most 50 table rows. Binary media
-payloads are shown as byte counts. Model controls reflect supported combinations;
-for example, TabPFN exposes regression, GPT-2 disables PEFT, and MViT uses 16 frames.
-Quick-check and standard-training presets set epochs, batch size, and backbone freezing.
+Start with **Quick check: 1 epoch** to test a small dataset, or **Standard: 10 epochs** for a longer starting configuration. These presets set epochs, batch size, and backbone freezing. You can then adjust:
 
-The default split is 70% training, 10% validation, and 20% holdout. Classification
-splits are stratified; grouped splits keep each group together, with approximate
-ratios. Forecasting splits follow time order. Class folders are classification
-inputs; use parquet with numeric targets for image/video regression, or a
-video CSV/XLSX list with numeric labels for video regression.
+| Control | What it changes |
+| --- | --- |
+| **Number of classes** | How many categories an image, text, or video classifier should predict. |
+| **cls / reg** | Classification (categories) or regression (numbers), where supported. |
+| **Epochs** | How many training passes to make through the dataset. |
+| **Batch size** | How many examples to process at once; smaller values use less memory. |
+| **Learning rate** | The size of the model's training updates. |
+| **Use a reproducible seed (42)** | Uses a fixed random seed for repeatable experiments. |
+| **Freeze backbone** | Keeps the pretrained feature extractor fixed, where supported. |
+| **Use PEFT / LoRA** | Enables parameter-efficient fine-tuning for compatible models. |
+| **Added layers / Embedding size** | Adjusts the added model layers and feature representation, where supported. |
 
-Native video models use the preprocessing supplied with their Kinetics weights.
-Frame models use the image backbone preprocessing. Model weights may download on
-the first run. TabPFN weights may require Hugging Face access; DeepTune uses your
-existing authentication and does not replace it. Desktop runs report missing
-authentication in the log instead of opening an interactive login prompt.
+Extra controls appear for particular workflows: frame count and pooling for video, continuous/categorical feature lists for GANDALF, fine-tuning for TabPFN, and a time index column for time series. Text models support classification; GPT-2 does not support the PEFT option.
+
+### 3. Start training
+
+Open **Run**, choose an output folder, and read the readiness message. Resolve missing input or unsupported-setting messages before starting.
+
+Click **Run**. Follow **Live output**, the run stage, and elapsed time. **Follow output** keeps the log at its newest messages. Use **Save log** for a separate copy, or **Stop** to cancel the run.
+
+Closing the app stops active work. Stopped or failed runs may leave partial output; a partial folder does not mean a usable model has been saved.
+
+### 4. Review results
+
+Open **Results**, click **Refresh**, and select an experiment from **Run history**.
+
+- **Holdout metrics** shows the evaluation values available for that run.
+- **Training curve** plots training and validation loss when those values were recorded.
+- **Paths** identifies available model checkpoints and embedding files.
+- **Export metrics CSV** exports the selected experiment's available metrics.
+- **Open selected folder** opens the experiment files.
+
+The default data split is 70% training, 10% validation, and 20% holdout. Classification tries to preserve class proportions; grouped splits keep groups together, and time-series splits preserve time order. Very small datasets may not support the requested split.
 
 ## Import MP4 videos
 
-1. On **Dataset**, choose **Video** and keep **Raw data** enabled.
-2. Click **Browse file** or **Select MP4 / video files**, select one or more
-   clips (Ctrl/Shift for multiple selections), then confirm the file picker.
-   The files appear in the list immediately, without requiring a label.
-   DeepTune opens the video preview and starts muted, looping playback with
-   play/pause, restart, and a seek timeline. It shows dimensions, frame rate, and duration;
-   any import or decoding error appears beside the import controls.
-3. Type a class label beside each clip, or enter one in the shared field and
-   click **Apply label to selected**. A class label describes what the video
-   shows, such as walking or running. It is needed for training, not previewing.
-4. Click **Use clip dataset**, choose training settings, and launch from **Run**.
+1. On **Dataset**, select **video** with **Raw data** enabled.
+2. Click **Select MP4 / video files...**. Use Ctrl/Shift to choose several clips.
+3. Preview the selected clip. **Play/Pause**, **Restart**, **Loop**, and the seek bar control playback. **Preview** beside a clip plays that clip without replacing your training dataset.
+4. Enter each clip's class label, or use **Apply label to selected** to label the current selection together.
+5. Click **Use clip dataset**. The app saves a CSV list and selects it for training.
+6. Choose the model and training options, then start from **Run**.
 
-Click **Preview** beside any imported clip to play it without changing the
-training dataset path. The preview pauses when you leave the Dataset page.
-For audio or full-screen playback, use **Open in video player** to launch the
-file in your system's video player. Inline playback uses OpenCV's bundled
-FFmpeg decoder; a separate FFmpeg installation is not required for the verified
-Windows environment. Decoding runs on a worker, and only the latest display
-frame is retained, so the preview does not preload an entire video into memory.
+Labels are needed for training, but you can import and preview unlabeled clips. Aim for at least ten clips per class as a useful starting point for splitting; this is not a guarantee of model quality. Keep the original videos available at their saved paths.
 
-The clip list is saved as a CSV in your local DeepTune settings directory.
-Keep the original videos available at their selected paths. Loading that CSV
-restores the list for editing. For a useful split, start with at least ten
-clips per class; training and validation need examples from each class.
+The inline preview is muted and shows frame rate, dimensions, and duration. **Open in video player** opens your system player for audio or full-screen playback. Preview playback pauses when you leave the Dataset page.
 
-You can also supply a CSV/XLSX file containing `videos` (local file paths) and
-`labels` columns. Relative paths are resolved against the list's directory.
-Duplicate files and missing clips are rejected. MP4, AVI, MOV, MKV, WebM, M4V,
-WMV, MPEG, and MPG containers are accepted; decoding depends on the codec
-inside the file. Corrupt or unsupported clips produce a readable error.
+### Use an existing video list
 
-## Development checks
+A CSV/XLSX manifest needs `videos` and `labels` columns for training. Relative video paths are resolved from the manifest's folder. Duplicate files, missing paths, and missing labels are reported.
 
-```powershell
-.venv\Scripts\python.exe -m pytest tests -q
-.venv\Scripts\python.exe desktop\app.py --self-test --data <raw_data_folder> --modality video --outdir desktop-smoke-results
+```csv
+videos,labels
+clips/walking-01.mp4,walking
+clips/running-01.mp4,running
 ```
 
-This builds the UI, exercises every nav page and modality switch through a
-real (briefly shown) viewport, then launches one real, tiny training run
-(1 epoch, a frozen backbone) through the exact same runner the GUI's Run
-button uses, and confirms it produced a normal results folder. It needs a
-small real image/video dataset on disk (at least 10 examples per class is a useful
-starting point for the default split). It checks for metrics, a checkpoint, and
-embeddings and stops after ten minutes if the run has not finished.
+This example shows the column format; add enough clips in each class before training. For regression, provide numeric target labels instead of class names.
 
-For a repeatable video plumbing check using generated moving-shape clips:
+Accepted video containers include MP4, AVI, MOV, MKV, WebM, M4V, WMV, MPEG, and MPG. Playback also depends on the codec inside the file.
 
-```powershell
-.venv\Scripts\python.exe scripts\smoke_video.py --model resnet18
-.venv\Scripts\python.exe scripts\smoke_video.py --model resnet18 --manifest
-.venv\Scripts\python.exe scripts\smoke_video.py --model r3d_18
-.venv\Scripts\python.exe scripts\smoke_video.py --model resnet18 --peft --pooling attention
-```
+### Choose a video analysis approach
 
-These smoke tests validate execution and artifact shapes, not predictive quality.
+**Frame-based models** sample frames across each clip and combine their features with **mean** or **attention** pooling. **Native video models**, such as `r3d_18` or `swin3d_t`, process the frame sequence together; the pooling choice does not apply to them. The MViT option requires 16 sampled frames.
 
-## Packaging
+Video analysis predicts one result for a whole clip. It uses visual content, not audio, and does not provide object tracking or event timestamps.
 
-Python 3.12 is the verified environment. Install with `python -m pip install .`;
-the package provides `deeptune` and `deeptune-desktop` commands. Build a wheel with
-`python -m pip wheel . --no-deps --wheel-dir dist`.
+## Test new data
 
-### Standalone Windows installer
+1. On **Run**, select the output folder containing the experiment you want to use.
+2. Open **Test** and click **Refresh**.
+3. Select a trained run with a saved checkpoint. The app restores the model settings from that run.
+4. Under **New data**, browse to an image, a video, an image/video folder, or a supported data file.
+5. Click **Test model**. Follow the live output, then inspect **Metrics** and **Predictions**.
+6. Click **Open output folder** for the full prediction files.
 
-For end users who shouldn't need to install Python themselves, `packaging/`
-builds a standalone `DeepTune-Setup-<version>.exe`: a normal Windows
-installer that unpacks a self-contained copy of the app (PyInstaller-frozen,
-with its own bundled Python and every dependency, including torch/
-transformers/tabpfn) and adds Start Menu / Desktop shortcuts. See
-[packaging/README.md](../packaging/README.md) for how to build it and what
-it needs on the machine that runs it.
+For image/video folders, class subfolders supply known labels; a flat folder lets you predict without labels. Video inference also accepts CSV/XLSX manifests without a `labels` column. For tables, text, and time series, use the columns expected by the trained model.
+
+| Output | What you get |
+| --- | --- |
+| **Predicted class or value** | A category for classification or a number for regression. |
+| **Confidence** | A classification score alongside the prediction. |
+| **Comparison to known labels** | Correctness or numeric error when ground truth is supplied. |
+| **predictions.csv** | The complete per-sample results; the app previews up to 200 rows. |
+| **inference_metrics.json** | Summary metrics when labeled test data is available. |
+
+Unlabeled inputs produce predictions without accuracy metrics. **Stop** cancels an active test.
+
+Current support limits: SigLIP image models are not wired into the Test page. Time-series testing needs history from the original run's saved data splits; it is not an unrestricted future-forecasting tool. Some TabPFN models also require external model access. See [Help](../docs/TROUBLESHOOTING.md#current-app-limits).
+
+## Save settings and return later
+
+Use **Save settings...** on Run to store a reusable configuration, and **Load settings...** to restore it. The app also restores its previous session when reopened.
+
+Each launch saves its configuration and full logs under `desktop-sessions` in the chosen output folder. Keep datasets at the paths recorded in your settings, and keep saved experiment folders intact for later testing.
+
+## Need help?
+
+[Troubleshooting](../docs/TROUBLESHOOTING.md) · [Report an app issue](https://github.com/ply971/deeptune-installer/issues) · [Installation and download](../README.md#install-and-open)
